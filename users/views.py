@@ -40,7 +40,8 @@ class AuthorizationAPIView(CreateAPIView):
                 return Response(
                     status=status.HTTP_401_UNAUTHORIZED,
                     data={
-                        "error": "User account is not activated yet!"
+                        "error":
+                        "User account is not activated yet!"
                     }
                 )
 
@@ -49,15 +50,14 @@ class AuthorizationAPIView(CreateAPIView):
             )
 
             return Response(
-                data={
-                    "key": token.key
-                }
+                data={"key": token.key}
             )
 
         return Response(
             status=status.HTTP_401_UNAUTHORIZED,
             data={
-                "error": "User credentials are wrong!"
+                "error":
+                "User credentials are wrong!"
             }
         )
 
@@ -70,7 +70,6 @@ class RegistrationAPIView(CreateAPIView):
         serializer = self.get_serializer(
             data=request.data
         )
-
         serializer.is_valid(
             raise_exception=True
         )
@@ -111,15 +110,14 @@ class ConfirmAPIView(CreateAPIView):
         serializer = ConfirmationSerializer(
             data=request.data
         )
-
         serializer.is_valid(
             raise_exception=True
         )
 
-        user_id = serializer.validated_data["user_id"]
+        email = serializer.validated_data["email"]
 
         user = CustomUser.objects.get(
-            id=user_id
+            email=email
         )
 
         user.is_active = True
@@ -132,7 +130,8 @@ class ConfirmAPIView(CreateAPIView):
         return Response(
             status=status.HTTP_200_OK,
             data={
-                "message": "User successfully activated",
+                "message":
+                "User successfully activated",
                 "key": token.key
             }
         )
