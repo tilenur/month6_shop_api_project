@@ -10,7 +10,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         token["email"] = user.email
+    
+        token["birthday"] = str(user.birthday) if user.birthday else None
         return token
+        
 
 class UserBaseSerializer(serializers.Serializer):
     email = serializers.EmailField()

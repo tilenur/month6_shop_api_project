@@ -4,6 +4,7 @@ from users.managers import CustomUserManager
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
+    birthday = models.DateField(blank=True, null=True)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     phone_number = models.CharField(
@@ -14,7 +15,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    REQUIRED_FIELDS = []
     REQUIRED_FIELDS = ["phone_number"]
     USERNAME_FIELD = "email"
 
@@ -28,4 +28,4 @@ class ConfirmationCode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Код подтверждения для {self.user.username}"
+        return f"Код подтверждения для {self.user.email}"

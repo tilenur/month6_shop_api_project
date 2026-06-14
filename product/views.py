@@ -8,6 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
 from common.permissions import CanEditWithIn15Minutes, IsAnon, IsAuth, IsModerator
+from common.validators import AgeValidator
 
 from .models import Category, Product, Review
 from .serializers import (
@@ -74,6 +75,9 @@ class ProductListCreateAPIView(ListCreateAPIView):
 
 
     def post(self, request, *args, **kwargs):
+        
+        AgeValidator()(request)
+
         serializer = ProductValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
