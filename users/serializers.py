@@ -4,16 +4,21 @@ from rest_framework.exceptions import ValidationError
 from .models import ConfirmationCode, CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
+class OauthCodeSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
 
         token["email"] = user.email
-    
+
         token["birthday"] = str(user.birthday) if user.birthday else None
         return token
-        
+
 
 class UserBaseSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -30,7 +35,7 @@ class RegisterValidateSerializer(UserBaseSerializer):
             CustomUser.objects.get(email=email)
         except:
             return email
-        raise ValidationError('User уже существует!')
+        raise ValidationError("User уже существует!")
 
 
 class ConfirmationSerializer(serializers.Serializer):
@@ -38,20 +43,20 @@ class ConfirmationSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6)
 
     def validate(self, attrs):
-        user_id = attrs.get('user_id')
-        code = attrs.get('code')
+        user_id = attrs.get("user_id")
+        code = attrs.get("code")
 
         try:
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
-            raise ValidationError('User не существует!')
+            raise ValidationError("User не существует!")
 
         try:
             confirmation_code = ConfirmationCode.objects.get(user=user)
         except ConfirmationCode.DoesNotExist:
-            raise ValidationError('Код подтверждения не найден!')
+            raise ValidationError("Код подтверждения не найден!")
 
         if confirmation_code.code != code:
-            raise ValidationError('Неверный код подтверждения!')
+            raise ValidationError("Неверный код подтверждения!")
 
         return attrs
