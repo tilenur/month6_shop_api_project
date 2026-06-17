@@ -1,4 +1,5 @@
 import os  # Access environment variables
+from django.utils import timezone
 import requests  # Send HTTP requests
 
 from django.contrib.auth import get_user_model
@@ -38,6 +39,7 @@ class GoogleLoginAPIView(CreateAPIView):
 
         # Convert response to dictionary
         token_data = token_response.json()
+        print("token_data", token_data)
 
         # Get access token
         access_token = token_data.get("access_token")
@@ -58,11 +60,23 @@ class GoogleLoginAPIView(CreateAPIView):
 
         # Extract email from Google profile
         email = user_info["email"]
+        first_name = user_info.get("given_name")
+        last_name = user_info.get("family_name")
 
         # Find existing user or create new one
         user, created = CustomUser.objects.get_or_create(
             email=email,
+            defaults={
+                "first_name": first_name,
+                "last_name": last_name,
+                "registration_source": "google",
+            },
         )
+
+        # user is created - делать пользователя активным
+        user.is_active = True
+        user.last_login = timezone.now()
+        user.save()
 
         # Generate JWT refresh token
         refresh = RefreshToken.for_user(user)
