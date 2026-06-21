@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import CreateAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.core.cache import cache
 
 from .serializers import (
     RegisterValidateSerializer,
@@ -17,6 +18,7 @@ from .serializers import (
 from .models import ConfirmationCode, CustomUser
 import random
 import string
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -35,15 +37,15 @@ class AuthorizationAPIView(CreateAPIView):
             if not user.is_active:
                 return Response(
                     status=status.HTTP_401_UNAUTHORIZED,
-                    data={'error': 'User account is not activated yet!'}
+                    data={"error": "User account is not activated yet!"},
                 )
 
             token, _ = Token.objects.get_or_create(user=user)
-            return Response(data={'key': token.key})
+            return Response(data={"key": token.key})
 
         return Response(
             status=status.HTTP_401_UNAUTHORIZED,
-            data={'error': 'User credentials are wrong!'}
+            data={"error": "User credentials are wrong!"},
         )
 
 
@@ -54,31 +56,27 @@ class RegistrationAPIView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
 
         # Use transaction to ensure data consistency
         with transaction.atomic():
             user = CustomUser.objects.create_user(
-                email=email,
-                password=password,
-                is_active=False
+                email=email, password=password, is_active=False
             )
 
             # Create a random 6-digit code
-            code = ''.join(random.choices(string.digits, k=6))
+            code = "".join(random.choices(string.digits, k=6))
 
-            confirmation_code = ConfirmationCode.objects.create(
-                user=user,
-                code=code
-            )
+            # saving normally in database
+            # confirmation_code = ConfirmationCode.objects.create(user=user, code=code)
+
+            # saving in Redis - cache.set (key, value. timeout)
+            cache.set(f"confirmation_{user.id}", code, 300)
 
         return Response(
             status=status.HTTP_201_CREATED,
-            data={
-                'user_id': user.id,
-                'confirmation_code': code
-            }
+            data={"user_id": user.id, "confirmation_code": code},
         )
 
 
@@ -89,7 +87,7 @@ class ConfirmUserAPIView(CreateAPIView):
         serializer = ConfirmationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user_id = serializer.validated_data['user_id']
+        user_id = serializer.validated_data["user_id"]
 
         with transaction.atomic():
             user = CustomUser.objects.get(id=user_id)
@@ -98,12 +96,12 @@ class ConfirmUserAPIView(CreateAPIView):
 
             token, _ = Token.objects.get_or_create(user=user)
 
-            ConfirmationCode.objects.filter(user=user).delete()
+            # ConfirmationCode.objects.filter(user=user).delete()
+
+            # Redis deleting key
+            cache.delete(f"confirmation_{user_id}")
 
         return Response(
             status=status.HTTP_200_OK,
-            data={
-                'message': 'User аккаунт успешно активирован',
-                'key': token.key
-            }
+            data={"message": "User аккаунт успешно активирован", "key": token.key},
         )
