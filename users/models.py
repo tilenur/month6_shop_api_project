@@ -26,6 +26,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email or ""
 
 
+# not needed due to Redis
 class ConfirmationCode(models.Model):
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="confirmation_code"

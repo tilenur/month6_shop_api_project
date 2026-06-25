@@ -74,6 +74,10 @@ class RegistrationAPIView(CreateAPIView):
             # saving in Redis - cache.set (key, value. timeout)
             cache.set(f"confirmation_{user.id}", code, 300)
 
+            from users.tasks import send_otp_email
+
+            send_otp_email.delay(code, email)
+
         return Response(
             status=status.HTTP_201_CREATED,
             data={"user_id": user.id, "confirmation_code": code},
