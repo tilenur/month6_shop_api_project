@@ -21,6 +21,10 @@ from celery.beat import crontab
 app.conf.beat_schedule = {
     "delete users": {
         "task": "users.tasks.delete_unactive_users",
-        "schedule": crontab(minute="*"),
-    }
+        "schedule": crontab(hour="*/5", minute=0),
+    },
+    "count products": {
+        "task": "product.tasks.products_count",
+        "schedule": crontab(minute="*/2"),
+    },
 }
